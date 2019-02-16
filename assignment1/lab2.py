@@ -1,4 +1,7 @@
 #
+# Curso de maestria: Inteligencia artificial (TEC)
+# Author: Jafet Chaves Barrantes <jafet.a15@gmail.com>
+
 # Sus respuestas para las preguntas falso y verdadero deben tener la siguiente forma.
 # Sus respuestas deben verse como las dos siguientes:
 #ANSWER1 = True
@@ -6,26 +9,26 @@
 
 # 1: Falso o Verdadero - busqueda Hill Climbing garantiza encontrar una respuesta
 #    si es que la hay
-ANSWER1 = None
+ANSWER1 = False
 
 # 2: Falso o Verdadero - busqueda Best-first encontrara una ruta optima
 #    (camino mas corto).
-ANSWER2 = None
+ANSWER2 = False
 
 # 3: Falso o Verdadero - Best-first y Hill climbing hacen uso de el
 #    valor de la heuristica de los nodos.
-ANSWER3 = None
+ANSWER3 = True
 
 # 4: Falso o Verdadero - A* utiliza un conjunto extendido de nodos
-ANSWER4 = None
+ANSWER4 = True
 
 # 5: Falso o Verdadero - Anchura primero esta garantizado a encontrar un
 #    camino con el minimo numero de nodos posible
-ANSWER5 = None
+ANSWER5 = True
 
 # 6: Falso o Verdadero - El Branch and bound regular utiliza valores de
 #    la heuristica para acelerar la busqueda de un camino optimo
-ANSWER6 = None
+ANSWER6 = False
 
 # Import the Graph data structure from 'search.py'
 # Refer to search.py for documentation
@@ -33,8 +36,45 @@ from search import Graph
 
 # Implemente estos y los puede revisar con el modulo tester
 
+#Breadth-first search, la agenda se administra como una cola
+#Entrada:
+#   graph: el grafo
+#   start: nombre del nodo de inicio
+#   goal: nombre del nodo objetivo
 def bfs(graph, start, goal):
-    raise NotImplementedError
+    #Se crea la agenda con el primer nodo
+    agenda = [(start,)]
+    #Ya se alcanzo el objetivo, el nodo de inicio es el objetivo
+    if start == goal:
+		print('Start node is the same as the goal node')
+		return [start]
+    #Mientras la agenda no este vacia
+    while len(agenda) > 0:
+		#Crea un nuevo camino
+        new_paths = []
+        #El primer camino en la agenda es el que hay que extender (FIFO)
+        current_path = agenda[0]
+        #Actualizar la agenda quitando los caminos explorados
+        agenda.remove(current_path)
+        #Obtenga el nodo a extender, este es el ultimo nodo del camino actual
+        current_node = current_path[-1]
+        #Obtenga la lista de nodos conectados al nodo a extender
+        new_nodes = graph.get_connected_nodes(current_node)
+        #Elimine los nodos repetidos del camino actual
+        if len(current_path) > 1:
+            new_nodes = [ nodes for nodes in new_nodes if nodes not in current_path]
+        #Revise si el objetivo esta en los nodos adyacentes al nodo actual
+        if goal in new_nodes:
+            goal_path = current_path + (goal,)
+            #Regrese la lista con el camino al objetivo (backtracking)
+            return list(goal_path)
+        #Agregue los caminos por explorar
+        new_paths += [ current_path + (nodes,) for nodes in new_nodes ]
+        #Extienda la agenda con los nuevos caminos
+        agenda.extend(new_paths)
+    print("I couldn't find a path to the goal :(")
+    #Retorna una lista vacia si no encuentra un camino al nodo objetivo
+    return []
 
 ## Si hizo el anterior el siguiente debe ser muy sencillo
 def dfs(graph, start, goal):
@@ -81,6 +121,6 @@ def is_admissible(graph, goal):
 def is_consistent(graph, goal):
     raise NotImplementedError
 
-HOW_MANY_HOURS_THIS_PSET_TOOK = ''
-WHAT_I_FOUND_INTERESTING = ''
-WHAT_I_FOUND_BORING = ''
+HOW_MANY_HOURS_THIS_PSET_TOOK = '12'
+WHAT_I_FOUND_INTERESTING = 'A*'
+WHAT_I_FOUND_BORING = 'nada'
