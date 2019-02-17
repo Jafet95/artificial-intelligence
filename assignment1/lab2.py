@@ -38,18 +38,18 @@ from search import Graph
 
 #Breadth-first search, la agenda se administra como una cola
 #Entrada:
-#   graph: el grafo
-#   start: nombre del nodo de inicio
-#   goal: nombre del nodo objetivo
+#    graph: el grafo
+#    start: nombre del nodo de inicio
+#    goal: nombre del nodo objetivo
 #Salida:
-#	lista: goal_path (lista con el camino al nodo objetivo) o vacia
+#    lista: goal_path (lista con el camino al nodo objetivo) o vacia
 def bfs(graph, start, goal):
     #Se crea la agenda con el primer nodo
     agenda = [(start,)]
     #Ya se alcanzo el objetivo, el nodo de inicio es el objetivo
     if start == goal:
-		print('Start node is the same as the goal node')
-		return [start]
+        print('Start node is the same as the goal node')
+        return [start]
     #Mientras la agenda no este vacia
     while len(agenda) > 0:
         #Crea un nuevo camino
@@ -71,7 +71,8 @@ def bfs(graph, start, goal):
             #Regrese la lista con el camino al objetivo (backtracking)
             return list(goal_path)
         #Agregue los caminos por explorar
-        new_paths += [ current_path + (nodes,) for nodes in new_nodes ]
+        for nodes in new_nodes:
+            new_paths += [ current_path + (nodes,)]
         #Extienda la agenda con los nuevos caminos
         agenda.extend(new_paths)
     print("I couldn't find a path to the goal :(")
@@ -82,11 +83,11 @@ def bfs(graph, start, goal):
 
 #Depth-first search, la agenda se administra como una pila
 #Entrada:
-#   graph: el grafo
-#   start: nombre del nodo de inicio
-#   goal: nombre del nodo objetivo
+#    graph: el grafo
+#    start: nombre del nodo de inicio
+#    goal: nombre del nodo objetivo
 #Salida:
-#	lista: goal_path (lista con el camino al nodo objetivo) o vacia
+#    lista: goal_path (lista con el camino al nodo objetivo) o vacia
 def dfs(graph, start, goal):
     #Se crea la agenda con el primer nodo
     agenda = [(start,)]
@@ -114,7 +115,8 @@ def dfs(graph, start, goal):
             goal_path = current_path + (goal,)
             return list(goal_path)
         #Agregue los caminos por explorar
-        new_paths += [ current_path + (nodes,) for nodes in new_nodes ]
+        for nodes in new_nodes:
+            new_paths += [ current_path + (nodes,)]
         #Los nuevos caminos se agregan como una pila (LIFO)
         new_paths.extend(agenda)
         agenda = new_paths
@@ -125,8 +127,66 @@ def dfs(graph, start, goal):
 ## Ahora agregue heuristica a su busqueda
 ## Hill-climbing puede verse como un tipo de busqueda a profundidad primero
 ## La busqueda debe ser hacia los valores mas bajos que indica la heuristica
+
+#Retorna los nuevos caminos ordenados ascendentemente
+def sort_paths(graph,goal,new_paths):
+    #Return the value of the heuristic from the start to the goal
+    heuristic_to_goal_list = []
+    sorted_paths = []
+    #Paths+heuristic tuples
+    for path in new_paths:
+        heuristic_to_goal = graph.get_heuristic(path[-1],goal)
+        heuristic_to_goal_list.append([path,heuristic_to_goal])
+    heuristic_to_goal_list=sorted(heuristic_to_goal_list, key=lambda x: x[1], reverse=False)
+    for paths in heuristic_to_goal_list:
+        sorted_paths.append(paths[0])
+    return sorted_paths
+
+#Hill-climbing search (greedy local search), similar a dfs pero deben
+#ordenarse los nodos primero de acuerdo a la heuristica antes de
+#actualizar el LIFO
+#Entrada:
+#    graph: el grafo
+#    start: nombre del nodo de inicio
+#    goal: nombre del nodo objetivo
+#Salida:
+#    lista: goal_path (lista con el camino al nodo objetivo) o vacia
 def hill_climbing(graph, start, goal):
-    raise NotImplementedError
+    #Se crea la agenda con el primer nodo
+    agenda = [(start,)]
+    #Ya se alcanzo el objetivo, el nodo de inicio es el objetivo
+    if start == goal:
+		print('Start node is the same as the goal node')
+		return [start]
+    #Mientras la agenda no este vacia
+    while len(agenda) > 0:
+        #Crea un nuevo camino
+        new_paths = []
+        #El primer camino en la agenda es el que hay que extender (FIFO)
+        current_path = agenda[0]
+        #Actualizar la agenda quitando los caminos explorados
+        agenda.remove(current_path)
+        #Obtenga el nodo a extender, este es el ultimo nodo del camino actual
+        current_node = current_path[-1]
+        #Obtenga la lista de nodos conectados al nodo a extender
+        new_nodes = graph.get_connected_nodes(current_node)
+        #Elimine los nodos repetidos del camino actual
+        if len(current_path) > 1:
+            new_nodes = [ nodes for nodes in new_nodes if nodes not in current_path]
+        #Revise si el objetivo esta en los nodos adyacentes al nodo actual
+        if goal in new_nodes:
+            goal_path = current_path + (goal,)
+            return list(goal_path)
+        #Agregue los caminos por explorar
+        for nodes in new_nodes:
+            new_paths += [ current_path + (nodes,)]
+        #Los nuevos caminos se agregan como una pila (LIFO)
+        new_paths = sort_paths(graph,goal,new_paths)
+        new_paths.extend(agenda)
+        agenda = new_paths
+    print("I couldn't find a path to the goal :(")
+    #Retorna una lista vacia si no encuentra un camino al nodo objetivo
+    return []
 
 ## Ahora implementamos beam search, una variante de BFS
 ## que acota la cantidad de memoria utilizada para guardar los caminos
