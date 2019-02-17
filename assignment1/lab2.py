@@ -130,15 +130,16 @@ def dfs(graph, start, goal):
 
 #Retorna los nuevos caminos ordenados ascendentemente
 def sort_paths(graph,goal,new_paths):
-    #Return the value of the heuristic from the start to the goal
     heuristic_to_goal_list = []
     sorted_paths = []
-    #Paths+heuristic tuples
     for path in new_paths:
+        #Retorna el valor de la heuristica del nodo actual al objetivo
         heuristic_to_goal = graph.get_heuristic(path[-1],goal)
         heuristic_to_goal_list.append([path,heuristic_to_goal])
+    #Se ordenan los caminos de acuerdo a la heuristica
     heuristic_to_goal_list=sorted(heuristic_to_goal_list, key=lambda x: x[1], reverse=False)
     for paths in heuristic_to_goal_list:
+        #Se recuperan solo los caminos de la lista ordenada de heuristicas
         sorted_paths.append(paths[0])
     return sorted_paths
 
@@ -162,7 +163,7 @@ def hill_climbing(graph, start, goal):
     while len(agenda) > 0:
         #Crea un nuevo camino
         new_paths = []
-        #El primer camino en la agenda es el que hay que extender (FIFO)
+        #El primer camino en la agenda es el que hay que extender
         current_path = agenda[0]
         #Actualizar la agenda quitando los caminos explorados
         agenda.remove(current_path)
@@ -238,11 +239,41 @@ def beam_search(graph, start, goal, beam_width):
 ## Esta funcion toma un grafo y una lista de nombres de nodos y retorna
 ## la suma de los largos de las aristas a lo largo del camino -- la distancia total del camino.
 def path_length(graph, node_names):
-    raise NotImplementedError
-
+    length = 0
+    for i in xrange(len(node_names)-1):
+        node1 = node_names[i]
+        node2 = node_names[i+1]
+        length += graph.get_edge(node1, node2).length
+    return length
 
 def branch_and_bound(graph, start, goal):
-    raise NotImplementedError
+    #Ahora a la agenda se incorpora el costo del camino respectivo
+    agenda = [(0, [start])]
+    #Mientras la agenda no este vacia
+    while len(agenda) > 0:
+        #El primer camino en la agenda es el que hay que extender
+        current_path = agenda.pop(0)[1]
+        #Obtenga el nodo a extender, este es el ultimo nodo del camino actual
+        current_node = current_path[-1]
+        #Obtenga la lista de nodos conectados al nodo a extender
+        new_nodes = graph.get_connected_nodes(current_node)
+        #Para cada nuevo nodo
+        for node in new_nodes:
+            #Descartar los repetidos
+            if node not in current_path:
+                #Actualizar el camino actual
+                new_path = current_path + [node]
+                #Nodo actual es el objetivo, anteriormente ya se tiene el camino
+                if node == goal:
+                    return new_path
+                #Actualiza el elemento que contiene el costo y nodos del camino
+                updated_path = (path_length(graph, new_path), new_path)
+                #Actualizar la agenda
+                agenda.append(updated_path)
+        #Se ordena la agenda de acuerdo a los costos del camino
+        agenda = sorted(agenda, key=lambda tup: tup[0])
+    return []
+
 
 def a_star(graph, start, goal):
     raise NotImplementedError
