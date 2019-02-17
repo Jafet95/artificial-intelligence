@@ -93,8 +93,8 @@ def dfs(graph, start, goal):
     agenda = [(start,)]
     #Ya se alcanzo el objetivo, el nodo de inicio es el objetivo
     if start == goal:
-		print('Start node is the same as the goal node')
-		return [start]
+        print('Start node is the same as the goal node')
+        return [start]
     #Mientras la agenda no este vacia
     while len(agenda) > 0:
         #Crea un nuevo camino
@@ -156,8 +156,8 @@ def hill_climbing(graph, start, goal):
     agenda = [(start,)]
     #Ya se alcanzo el objetivo, el nodo de inicio es el objetivo
     if start == goal:
-		print('Start node is the same as the goal node')
-		return [start]
+        print('Start node is the same as the goal node')
+        return [start]
     #Mientras la agenda no este vacia
     while len(agenda) > 0:
         #Crea un nuevo camino
@@ -194,7 +194,43 @@ def hill_climbing(graph, start, goal):
 ## Los k candidatos deben ser determinados utilizando la
 ## funcion (valor) de heuristica del grafo, utilizando los valores mas bajos como los mejores
 def beam_search(graph, start, goal, beam_width):
-    raise NotImplementedError
+    #Se crea la agenda con el primer nodo
+    agenda = [(start,)]
+    #Ya se alcanzo el objetivo, el nodo de inicio es el objetivo
+    if start == goal:
+        print('Start node is the same as the goal node')
+        return [start]
+    #Mientras la agenda no este vacia
+    while len(agenda) > 0:
+        agenda = agenda[:beam_width]
+        #Crea un nuevo camino
+        new_paths = []
+        while len(agenda) > 0:
+            #El primer camino en la agenda es el que hay que extender (FIFO)
+            current_path = agenda[0]
+            #Actualizar la agenda quitando los caminos explorados
+            agenda.remove(current_path)
+            #Obtenga el nodo a extender, este es el ultimo nodo del camino actual
+            current_node = current_path[-1]
+            #Obtenga la lista de nodos conectados al nodo a extender
+            new_nodes = graph.get_connected_nodes(current_node)
+            #Elimine los nodos repetidos del camino actual
+            if len(current_path) > 1:
+                new_nodes = [ nodes for nodes in new_nodes if nodes not in current_path]
+            #Revise si el objetivo esta en los nodos adyacentes al nodo actual
+            if goal in new_nodes:
+                goal_path = current_path + (goal,)
+                #Regrese la lista con el camino al objetivo (backtracking)
+                return list(goal_path)
+            #Agregue los caminos por explorar
+            for nodes in new_nodes:
+                new_paths += [ current_path + (nodes,)]
+        #Extienda la agenda con los nuevos caminos
+        agenda.extend(new_paths)
+        agenda = sort_paths(graph,goal,agenda)
+    print("I couldn't find a path to the goal :(")
+    #Retorna una lista vacia si no encuentra un camino al nodo objetivo
+    return []
 
 ## Ahora se implemente busqueda optima, Las anteriores NO utilizan
 ## las distancias entre los nodos en sus calculos
