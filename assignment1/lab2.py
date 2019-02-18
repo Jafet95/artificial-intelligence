@@ -327,7 +327,8 @@ def sort_paths_a_star(graph,goal,new_paths):
 def a_star(graph, start, goal):
     #Se crea la agenda con el primer nodo
     agenda = [(start,)];
-    goal_path = False
+    #Se crea la referencia al camino objetivo
+    goal_path = []
     #Ya se alcanzo el objetivo, el nodo de inicio es el objetivo
     if start == goal:
         return [start]
@@ -347,7 +348,7 @@ def a_star(graph, start, goal):
         if len(current_path) > 1:
             new_nodes = [ node for node in new_nodes if node not in current_path]
         #Revise si el objetivo esta en los nodos adyacentes al nodo actual,
-        #pero aun no se puede que sea el camino mas optimo
+        #se debe asegurar que sea el camino mas optimo
         if goal in new_nodes:
             goal_path = current_path + (goal,)
         #Agregue los caminos por explorar
@@ -358,7 +359,9 @@ def a_star(graph, start, goal):
         agenda = new_paths
         #Ordene la agenda de acuerdo al costo estimado
         agenda = sort_paths_a_star(graph,goal,agenda)
-    if goal_path:
+    #Si el camino al objetivo se quita de la agenda, se asegura que es
+    #el optimo
+    if len(goal_path) != 0:
         return list(goal_path)
     else: return []
 
@@ -366,11 +369,32 @@ def a_star(graph, start, goal):
 ## puede dar ejemplos de grafos con heuristica admisible pero no consistente
 ## consistente pero no admisible?
 
+#Una heuristica admisible es aquella que NUNCA sobreestima
+#el costo del camino al objetivo
 def is_admissible(graph, goal):
-    raise NotImplementedError
+    admissible = True
+    #Encuentre el camino optimo para todos los nodos a partir de un
+    #objetivo
+    for node in graph.nodes:
+        path_to_goal = a_star(graph,node,goal)
+        if len(path_to_goal) > 0:
+            distance_to_goal = path_length(graph,path_to_goal)
+            #Si la heuristica al objetivo es mayor a la distancia al
+            #objetivo con el camino optimo entonces esta no admisible
+            if graph.get_heuristic(node,goal) > distance_to_goal:
+                admissible = False
+    return admissible
 
+#Una heuristica consistente es aquella que cumple con la desigualdad
+#triangular, todo heuristica consistente es admisible pero no
+#necesariamente al reves
 def is_consistent(graph, goal):
-    raise NotImplementedError
+    consistent = True
+    #Para todas las aristas del grafo verifique la desigualdad triangular
+    for edge in graph.edges:
+        if  edge.length < abs(graph.get_heuristic(edge.node2,goal) - graph.get_heuristic(edge.node1,goal)):
+            consistent = False
+    return consistent
 
 HOW_MANY_HOURS_THIS_PSET_TOOK = 'aprox. 12'
 WHAT_I_FOUND_INTERESTING = 'A*, al ser el algoritmo mas ampliamente conocido de best first search'
