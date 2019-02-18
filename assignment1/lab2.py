@@ -128,7 +128,14 @@ def dfs(graph, start, goal):
 ## Hill-climbing puede verse como un tipo de busqueda a profundidad primero
 ## La busqueda debe ser hacia los valores mas bajos que indica la heuristica
 
-#Retorna los nuevos caminos ordenados ascendentemente
+#Retorna los nuevos caminos ordenados ascendentemente de acuerdo a
+#la heuristica
+#Entrada:
+#    graph: el grafo
+#    goal: nombre del nodo objetivo
+#    new_paths: los caminos por ordenar
+#Salida:
+#    sorted_paths: lista con los caminos ordenados
 def sort_paths(graph,goal,new_paths):
     heuristic_to_goal_list = []
     sorted_paths = []
@@ -137,7 +144,7 @@ def sort_paths(graph,goal,new_paths):
         heuristic_to_goal = graph.get_heuristic(path[-1],goal)
         heuristic_to_goal_list.append([path,heuristic_to_goal])
     #Se ordenan los caminos de acuerdo a la heuristica
-    heuristic_to_goal_list=sorted(heuristic_to_goal_list, key=lambda x: x[1], reverse=False)
+    heuristic_to_goal_list = sorted(heuristic_to_goal_list, key=lambda x: x[1], reverse=False)
     for paths in heuristic_to_goal_list:
         #Se recuperan solo los caminos de la lista ordenada de heuristicas
         sorted_paths.append(paths[0])
@@ -194,6 +201,13 @@ def hill_climbing(graph, start, goal):
 ## Mantenemos solo k caminos candidatos de tamano n en nuestra agenda en todo momento.
 ## Los k candidatos deben ser determinados utilizando la
 ## funcion (valor) de heuristica del grafo, utilizando los valores mas bajos como los mejores
+
+#Entrada:
+#    graph: el grafo
+#    start: nombre del nodo de inicio
+#    goal: nombre del nodo objetivo
+#Salida:
+#    lista: goal_path (lista con el camino al nodo objetivo) o vacia
 def beam_search(graph, start, goal, beam_width):
     #Se crea la agenda con el primer nodo
     agenda = [(start,)]
@@ -238,6 +252,12 @@ def beam_search(graph, start, goal, beam_width):
 
 ## Esta funcion toma un grafo y una lista de nombres de nodos y retorna
 ## la suma de los largos de las aristas a lo largo del camino -- la distancia total del camino.
+
+#Entrada:
+#    graph: el grafo
+#    node_names: el par de nodos para calcular la distancia entre
+#Salida:
+#    length: el "largo" o costo del camino entre el par de nodos
 def path_length(graph, node_names):
     length = 0
     for i in xrange(len(node_names)-1):
@@ -246,6 +266,12 @@ def path_length(graph, node_names):
         length += graph.get_edge(node1, node2).length
     return length
 
+#Entrada:
+#    graph: el grafo
+#    start: nombre del nodo de inicio
+#    goal: nombre del nodo objetivo
+#Salida:
+#    lista: goal_path (lista con el camino al nodo objetivo) o vacia
 def branch_and_bound(graph, start, goal):
     #Ahora a la agenda se incorpora el costo del camino respectivo
     agenda = [(0, [start])]
@@ -274,10 +300,67 @@ def branch_and_bound(graph, start, goal):
         agenda = sorted(agenda, key=lambda tup: tup[0])
     return []
 
+#Retorna los nuevos caminos ordenados ascendentemente de acuerdo al
+#costo estimado = la heuristica + costo del camino
+#Entrada:
+#    graph: el grafo
+#    goal: nombre del nodo objetivo
+#    new_paths: los caminos por ordenar
+#Salida:
+#    sorted_paths: lista con los caminos ordenados
+def sort_paths_a_star(graph,goal,new_paths):
+    estimated_cost_to_goal_list = []
+    sorted_paths = []
+    for path in new_paths:
+        #Retorna el valor de la heuristica del nodo actual al objetivo
+        heuristic_to_goal = graph.get_heuristic(path[-1],goal)
+        #Calcula el costo estimado al objetivo
+        estimated_cost=path_length(graph, path)+heuristic_to_goal
+        estimated_cost_to_goal_list.append([path,estimated_cost])
+    #Se ordenan los caminos de acuerdo a la heuristica
+    estimated_cost_to_goal_list = sorted(estimated_cost_to_goal_list, key=lambda x: x[1], reverse=False)
+    for paths in estimated_cost_to_goal_list:
+        #Se recuperan solo los caminos de la lista ordenada de heuristicas
+        sorted_paths.append(paths[0])
+    return sorted_paths
 
 def a_star(graph, start, goal):
-    raise NotImplementedError
-
+    #Se crea la agenda con el primer nodo
+    agenda = [(start,)];
+    goal_path = False
+    #Ya se alcanzo el objetivo, el nodo de inicio es el objetivo
+    if start == goal:
+        return [start]
+    #Mientras la agenda no este vacia y no este en el camino optimo
+    while len(agenda) > 0 and not goal_path:
+        #Crea un nuevo camino
+        new_paths = []
+        #El primer camino en la agenda es el que hay que extender
+        current_path = agenda[0]
+        #Actualizar la agenda quitando los caminos explorados
+        agenda.remove(agenda[0])
+        #Obtenga el nodo a extender, este es el ultimo nodo del camino actual
+        current_node = current_path[-1]
+        #Obtenga la lista de nodos conectados al nodo a extender
+        new_nodes = graph.get_connected_nodes(current_node)
+        #Elimine los nodos repetidos del camino actual
+        if len(current_path) > 1:
+            new_nodes = [ node for node in new_nodes if node not in current_path]
+        #Revise si el objetivo esta en los nodos adyacentes al nodo actual,
+        #pero aun no se puede que sea el camino mas optimo
+        if goal in new_nodes:
+            goal_path = current_path + (goal,)
+        #Agregue los caminos por explorar
+        for nodes in new_nodes:
+            new_paths += [ current_path + (nodes,)]
+        new_paths.extend(agenda)
+        #Actualice la agenda
+        agenda = new_paths
+        #Ordene la agenda de acuerdo al costo estimado
+        agenda = sort_paths_a_star(graph,goal,agenda)
+    if goal_path:
+        return list(goal_path)
+    else: return []
 
 ## Es util determinar si un grafo tiene una heuristica admisible y consistente
 ## puede dar ejemplos de grafos con heuristica admisible pero no consistente
@@ -289,6 +372,6 @@ def is_admissible(graph, goal):
 def is_consistent(graph, goal):
     raise NotImplementedError
 
-HOW_MANY_HOURS_THIS_PSET_TOOK = '12'
-WHAT_I_FOUND_INTERESTING = 'A*'
-WHAT_I_FOUND_BORING = 'nada'
+HOW_MANY_HOURS_THIS_PSET_TOOK = 'aprox. 12'
+WHAT_I_FOUND_INTERESTING = 'A*, al ser el algoritmo mas ampliamente conocido de best first search'
+WHAT_I_FOUND_BORING = 'Ningun problema, todos fueron interesantes'
