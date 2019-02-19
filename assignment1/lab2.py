@@ -54,7 +54,7 @@ def bfs(graph, start, goal):
     while len(agenda) > 0:
         #Crea un nuevo camino
         new_paths = []
-        #El primer camino en la agenda es el que hay que extender (FIFO)
+        #El primer camino en la agenda es el que hay que extender
         current_path = agenda[0]
         #Actualizar la agenda quitando los caminos explorados
         agenda.remove(current_path)
@@ -73,7 +73,7 @@ def bfs(graph, start, goal):
         #Agregue los caminos por explorar
         for nodes in new_nodes:
             new_paths += [ current_path + (nodes,)]
-        #Extienda la agenda con los nuevos caminos
+        #Extienda la agenda con los nuevos caminos (FIFO)
         agenda.extend(new_paths)
     print("I couldn't find a path to the goal :(")
     #Retorna una lista vacia si no encuentra un camino al nodo objetivo
@@ -99,7 +99,7 @@ def dfs(graph, start, goal):
     while len(agenda) > 0:
         #Crea un nuevo camino
         new_paths = []
-        #El primer camino en la agenda es el que hay que extender (FIFO)
+        #El primer camino en la agenda es el que hay que extender
         current_path = agenda[0]
         #Actualizar la agenda quitando los caminos explorados
         agenda.remove(current_path)
@@ -221,7 +221,7 @@ def beam_search(graph, start, goal, beam_width):
         #Crea un nuevo camino
         new_paths = []
         while len(agenda) > 0:
-            #El primer camino en la agenda es el que hay que extender (FIFO)
+            #El primer camino en la agenda es el que hay que extender
             current_path = agenda[0]
             #Actualizar la agenda quitando los caminos explorados
             agenda.remove(current_path)
@@ -261,9 +261,7 @@ def beam_search(graph, start, goal, beam_width):
 def path_length(graph, node_names):
     length = 0
     for i in xrange(len(node_names)-1):
-        node1 = node_names[i]
-        node2 = node_names[i+1]
-        length += graph.get_edge(node1, node2).length
+        length += graph.get_edge(node_names[i], node_names[i+1]).length
     return length
 
 #Entrada:
