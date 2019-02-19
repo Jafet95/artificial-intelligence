@@ -273,32 +273,48 @@ def path_length(graph, node_names):
 #Salida:
 #    lista: goal_path (lista con el camino al nodo objetivo) o vacia
 def branch_and_bound(graph, start, goal):
-    #Ahora a la agenda se incorpora el costo del camino respectivo
-    agenda = [(0, [start])]
-    #Mientras la agenda no este vacia
+    #Se crea la agenda con el primer nodo
+    agenda = [(start,)];
+    #Se crea la referencia al camino objetivo
+    goal_path = []
+    #Ya se alcanzo el objetivo, el nodo de inicio es el objetivo
+    if start == goal:
+        return [start]
+    #Mientras la agenda no este vacia y no este en el camino optimo
     while len(agenda) > 0:
+        #Crea un nuevo camino
+        new_paths = []
         #El primer camino en la agenda es el que hay que extender
-        current_path = agenda.pop(0)[1]
+        current_path = agenda[0]
+        #Actualizar la agenda quitando los caminos explorados
+        agenda.remove(agenda[0])
         #Obtenga el nodo a extender, este es el ultimo nodo del camino actual
         current_node = current_path[-1]
         #Obtenga la lista de nodos conectados al nodo a extender
         new_nodes = graph.get_connected_nodes(current_node)
-        #Para cada nuevo nodo
-        for node in new_nodes:
-            #Descartar los repetidos
-            if node not in current_path:
-                #Actualizar el camino actual
-                new_path = current_path + [node]
-                #Nodo actual es el objetivo, anteriormente ya se tiene el camino
-                if node == goal:
-                    return new_path
-                #Actualiza el elemento que contiene el costo y nodos del camino
-                updated_path = (path_length(graph, new_path), new_path)
-                #Actualizar la agenda
-                agenda.append(updated_path)
-        #Se ordena la agenda de acuerdo a los costos del camino
-        agenda = sorted(agenda, key=lambda tup: tup[0])
-    return []
+        #Elimine los nodos repetidos del camino actual
+        if len(current_path) > 1:
+            new_nodes = [ node for node in new_nodes if node not in current_path]
+        #Descarte las opciones que no producen una solucion mas optima que la actual
+        if goal in new_nodes:
+            #Caso cuando hay no se ha encontrado aun un camino al objetivo
+            if len(goal_path) == 0:
+                goal_path = current_path + (goal,)
+            #Caso donde se deben chequear caminos mas optimos
+            if len(goal_path) != 0:
+                new_goal_path = current_path + (goal,)
+                if path_length(graph,new_goal_path) <= path_length(graph,goal_path):
+                    goal_path = new_goal_path
+        #Agregue los caminos por explorar
+        for nodes in new_nodes:
+            new_paths += [ current_path + (nodes,)]
+        #Extienda la agenda con los nuevos caminos (LIFO)
+        new_paths.extend(agenda)
+        agenda = new_paths
+    if len(goal_path) != 0:
+        return list(goal_path)
+    else: return []
+
 
 #Retorna los nuevos caminos ordenados ascendentemente de acuerdo al
 #costo estimado = la heuristica + costo del camino
