@@ -1,5 +1,5 @@
 #
-# Curso de maestria: Inteligencia artificial (TEC)
+# Curso de maestria: Inteligencia artificial (TEC), I Semestre 2019
 # Author: Jafet Chaves Barrantes <jafet.a15@gmail.com>
 
 # Sus respuestas para las preguntas falso y verdadero deben tener la siguiente forma.

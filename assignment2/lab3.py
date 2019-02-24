@@ -1,6 +1,5 @@
-# IC 6200 1er Semestre 2016
-# Nombre: <Su Nombre>
-# Correo: <Su Correo>
+# Curso de maestria: Inteligencia artificial (TEC), I Semestre 2019
+# Author: Jafet Chaves Barrantes <jafet.a15@gmail.com>
 
 from util import INFINITY
 
@@ -14,7 +13,7 @@ from util import INFINITY
 #      1. MM jugara mejor que AB.
 #      2. AB jugara mejor que  MM.
 #      3. Ambos jugaran al mismo nivel de destreza.
-ANSWER1 = 0
+ANSWER1 = 3
 
 # 1.2. Dos jugadores computarizados juegan un juego con un limite de tiempo. El jugador MM
 # hace busqueda minimax con profundidad iterativa, y el jugador AB hace busqueda alpha-beta
@@ -24,7 +23,7 @@ ANSWER1 = 0
 #      1. MM jugara mejor que AB.
 #      2. AB jugara mejor que  MM.
 #      3. Ambos jugaran al mismo nivel de destreza.
-ANSWER2 = 0
+ANSWER2 = 2
 
 ### 2. Connect Four
 from connectfour import *
@@ -57,7 +56,23 @@ def focused_evaluate(board):
     Un valor de retorno >= 1000 significa que el jugador actual ha ganado;
     Un valor de retorno <= -1000 significa que el jugador actual perdio
     """    
-    raise NotImplementedError
+    #Evalua si el jugador actual ha hecho un conecta 4
+    if board.is_win() == board.get_current_player_id():
+        score = 1000 - board.num_tokens_on_board()
+    #Evalua si el otro jugador ha hecho un conecta 4
+    elif board.is_win() == board.get_other_player_id():
+        score = -1000 + board.num_tokens_on_board()
+    #Si nadie ha ganado calcule el puntaje del tablero para el jugador
+    else:
+        score = board.longest_chain(board.get_current_player_id()) * 7
+        #Prefiere poner sus piezas en el centro del tablero
+        for row in range(6):
+            for col in range(7):
+                if board.get_cell(row, col) == board.get_current_player_id():
+                    score -= abs(3-col)
+                elif board.get_cell(row, col) == board.get_other_player_id():
+                    score += abs(3-col)
+    return score
 
 
 ## Crea una funcion "jugador" que utiliza la funcion focused_evaluate function
@@ -65,7 +80,9 @@ quick_to_win_player = lambda board: minimax(board, depth=4,
                                             eval_fn=focused_evaluate)
 
 ## Puede probar su nueva funcion de evaluacion descomentando la siguiente linea:
-#run_game(basic_player, quick_to_win_player)
+# ~ run_game(basic_player, quick_to_win_player)
+# ~ run_game(quick_to_win_player, basic_player)
+# ~ run_game(basic_player, basic_player)
 
 ## Escriba un procedimiento de busqueda alpha-beta-search que actua como el procedimiento minimax-search
 ## pero que utiliza poda alpha-beta para evitar buscar por malas ideas
