@@ -37,7 +37,7 @@ import tree_searcher
 ## jugar interactivamente!
 ## 
 ## Descomente la siguiente linea para jugar el juego como las blancas:
-#run_game(human_player, basic_player)
+# ~ run_game(human_player, basic_player)
 
 ## Descomente la siguiente linea para jugar como las negras:
 #run_game(basic_player, human_player)
@@ -55,7 +55,8 @@ def focused_evaluate(board):
     es el tablero para el jugador de turno.
     Un valor de retorno >= 1000 significa que el jugador actual ha ganado;
     Un valor de retorno <= -1000 significa que el jugador actual perdio
-    """    
+    """
+    score = 0
     #Evalua si el jugador actual ha hecho un conecta 4
     if board.is_win() == board.get_current_player_id():
         score = 1000 - board.num_tokens_on_board()
@@ -174,18 +175,59 @@ ab_iterative_player = lambda board: \
 ## same depth.
 
 def better_evaluate(board):
-    raise NotImplementedError
+    score = 0
+    a_columns = 0
+    a_rows = 0
+    na_columns = 0
+    na_rows = 0
+    vacias=42
+    if board.is_win() == board.get_current_player_id():
+        score = INFINITY
+    elif board.is_win() == board.get_other_player_id():
+        score = NEG_INFINITY
+    else:
+        #Bonuses
+        score += board.longest_chain(board.get_current_player_id())*10
+        list_current_player=list(board.chain_cells(board.get_current_player_id()))
+        for chain in list_current_player:
+            if len(chain) >= 3:
+                score += 30
+        for row in range(6):
+            for col in range(7):
+                if board.get_cell(row, col) == board.get_current_player_id():
+                    na_columns += abs(3-col)*2
+                    na_rows += 2
+                    vacias -= 1
+                if board.get_cell(row, col) == board.get_other_player_id():
+                    na_columns += abs(3-col)
+                    na_rows += 1
+                    vacias -= 1
+                if board.get_cell(row, col) == 0:
+                    a_columns += abs(3-col)*2
+                    a_rows += 1
+                    if vacias <= 28 and (col == 7):
+                        score += INFINITY
+            score += (a_columns + a_rows)-(na_columns+na_rows)
+
+    return score
 
 # Comente esta linea una vez que ha implementado completamente better_evaluate
-better_evaluate = memoize(basic_evaluate)
+# ~ better_evaluate = memoize(basic_evaluate)
 
 # Descomente esta linea para hacer que su better_evaluate corra mas rapido.
-# better_evaluate = memoize(better_evaluate)
+better_evaluate = memoize(better_evaluate)
 
 # Para el debugging: Cambie este if-guard a True, para hacer unit-test
 # de su funcion better_evaluate.
-if False:
+if True:
     board_tuples = (( 0,0,0,0,0,0,0 ),
+                    ( 0,0,0,0,0,0,0 ),
+                    ( 0,0,0,0,0,0,0 ),
+                    ( 0,2,2,1,1,2,0 ),
+                    ( 0,2,1,2,1,2,0 ),
+                    ( 2,1,2,1,1,1,0 ),
+                    )
+    board_tuples2 = (( 0,0,0,0,0,0,0 ),
                     ( 0,0,0,0,0,0,0 ),
                     ( 0,0,0,0,0,0,0 ),
                     ( 0,2,2,1,1,2,0 ),
@@ -207,15 +249,18 @@ your_player = lambda board: run_search_function(board,
                                                 eval_fn=better_evaluate,
                                                 timeout=5)
 
-#your_player = lambda board: alpha_beta_search(board, depth=4,
-#                                              eval_fn=better_evaluate)
+# ~ your_player = lambda board: alpha_beta_search(board, depth=8,
+                                              # ~ eval_fn=better_evaluate)
 
 ## Descomente para ver su jugador jugar un juego:
-#run_game(your_player, your_player)
 
 ## Descomente esto (o corralo en una ventana) para ver como le va 
 ## en el torneo que sera evaluado.
-#run_game(your_player, basic_player)
+# ~ run_game(human_player, your_player)
+# ~ run_game(basic_player, your_player)
+# ~ run_game(quick_to_win_player, your_player)
+# ~ run_game(human_player, your_player)
+# ~ run_game(your_player, your_player)
 
 ## Estas funciones son utilizadas por el tester, por favor no las modifique!
 def run_test_game(player1, player2, board):
@@ -242,7 +287,7 @@ COMPETE = (False)
 
 ## The standard survey questions.
 HOW_MANY_HOURS_THIS_PSET_TOOK = "6"
-WHAT_I_FOUND_INTERESTING = "La implementacion del algoritmo alpha-beta"
+WHAT_I_FOUND_INTERESTING = "La implementacion del better evaluate"
 WHAT_I_FOUND_BORING = "Nada"
 NAME = "Jafet Chaves"
 EMAIL = "jafet.a15@gmail.com"
