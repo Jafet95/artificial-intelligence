@@ -90,6 +90,42 @@ quick_to_win_player = lambda board: minimax(board, depth=4,
 ## contando la cantidad de evaluaciones estaticas que hace
 ##
 ## Puede utilizar el minimax() que se encuentra basicplayer.py como ejemplo.
+
+##Alpha-beta pruning es muy similar a minimax con la optimizacion:
+##"If m is better than n for Player, we will never get to n in play"
+#alpha = the value of the best (i.e., highest-value) choice we have found so
+#far at any choice point along the path for MAX.
+#beta = the value of the best (i.e., lowest-value) choice we have found so
+#far at any choice point along the path for MIN.
+#La busqueda debe retornar el numero de columna en la cual debe
+#agregar la ficha (best move)
+
+def max_value(board, depth, eval_fn, get_next_moves_fn, is_terminal_fn, alpha, beta):
+    if is_terminal_fn(depth, board):
+        return eval_fn(board)
+
+    val = NEG_INFINITY
+
+    for move, new_board in get_next_moves_fn(board):
+        val = max(val, min_value(new_board, depth-1, eval_fn, get_next_moves_fn, is_terminal_fn, alpha, beta))
+        if val >= beta:
+            return val
+        alpha = max(val,alpha)
+    return val
+
+def min_value(board, depth, eval_fn, get_next_moves_fn, is_terminal_fn, alpha, beta):
+    if is_terminal_fn(depth, board):
+        return eval_fn(board)
+
+    val = INFINITY
+
+    for move, new_board in get_next_moves_fn(board):
+        val = min(val, max_value(new_board, depth-1, eval_fn, get_next_moves_fn, is_terminal_fn, alpha, beta))
+        if val <= alpha:
+            return val
+        beta = min(val,beta)
+    return val
+
 def alpha_beta_search(board, depth,
                       eval_fn,
                       # NOTA: usted debe utilizar get_next_moves_fn cuando genera
@@ -98,8 +134,24 @@ def alpha_beta_search(board, depth,
                       # Las funciones que por defecto se asignan aqui funcionarar 
                       # para connect_four.
                       get_next_moves_fn=get_all_next_moves,
-		      is_terminal_fn=is_terminal):
-    raise NotImplementedError
+                      is_terminal_fn=is_terminal):
+
+    best_move = None
+    best_val = None
+    best_board = None
+    alpha = None
+    beta = None
+
+    #Para los movimientos posibles en el tablero actual
+    for move, new_board in get_next_moves_fn(board):
+        #Tecnica de negmax (maximizar siempre desde el jugador)
+        maxmin = -1 * max_value(new_board, depth-1, eval_fn, get_next_moves_fn, is_terminal_fn, alpha, beta)
+        if best_move == None or maxmin > best_val:
+            best_move = move
+            best_val = maxmin
+            best_board = new_board
+
+    return best_move
 
 ## Ahora deberia ser capaz de buscar al doble de profundidad en la misma cantidad de tiempo.
 ## (Claro que este jugador alpha-beta-player no funcionara hasta que haya definido
@@ -114,7 +166,7 @@ ab_iterative_player = lambda board: \
     run_search_function(board,
                         search_fn=alpha_beta_search,
                         eval_fn=focused_evaluate, timeout=5)
-#run_game(human_player, alphabeta_player)
+# ~ run_game(human_player, alphabeta_player)
 
 ## Finalmente, aqui debe crear una funcion de evaluacion mejor que focused-evaluate.
 ## By providing a different function, you should be able to beat
@@ -186,12 +238,12 @@ def run_test_tree_search(search, board, depth):
 ## Quiere utilizar su codigo en un torneo con otros estudiantes? Vea 
 ## la descripcion en el enunciado de la tarea. El torneo es opcional
 ## y no tiene efecto en su nota
-COMPETE = (None)
+COMPETE = (False)
 
 ## The standard survey questions.
-HOW_MANY_HOURS_THIS_PSET_TOOK = ""
-WHAT_I_FOUND_INTERESTING = ""
-WHAT_I_FOUND_BORING = ""
-NAME = ""
-EMAIL = ""
+HOW_MANY_HOURS_THIS_PSET_TOOK = "6"
+WHAT_I_FOUND_INTERESTING = "La implementacion del algoritmo alpha-beta"
+WHAT_I_FOUND_BORING = "Nada"
+NAME = "Jafet Chaves"
+EMAIL = "jafet.a15@gmail.com"
 
