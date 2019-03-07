@@ -219,7 +219,7 @@ better_evaluate = memoize(better_evaluate)
 
 # Para el debugging: Cambie este if-guard a True, para hacer unit-test
 # de su funcion better_evaluate.
-if True:
+if False:
     board_tuples = (( 0,0,0,0,0,0,0 ),
                     ( 0,0,0,0,0,0,0 ),
                     ( 0,0,0,0,0,0,0 ),
