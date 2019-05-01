@@ -1,9 +1,11 @@
-__author__ = 'stark'
+# Curso de maestria: Inteligencia artificial (TEC), I Semestre 2019
+# Author: Jafet Chaves Barrantes <jafet.a15@gmail.com>
 
 # Back-Propagation Neural Networks
 #
 import math
 import random
+import numpy as np
 
 random.seed(0)
 
@@ -18,13 +20,13 @@ def makeMatrix(I, J, fill=0.0):
         m.append([fill]*J)
     return m
 
-# our sigmoid function, tanh is a little nicer than the standard 1/(1+e^-x)
+# The sigmoid function is the standard 1/(1+e^-x)
 def sigmoid(x):
-    return math.tanh(x)
+    return 1/(1+np.exp(-x))
 
-# derivative of our sigmoid function, in terms of the output (i.e. y)
+# Derivative of the sigmoid function, in terms of the output variable
 def dsigmoid(y):
-    return 1.0 - y**2
+    return y*(1-y)
 
 class NN:
     def __init__(self, ni, nh, no):
