@@ -131,9 +131,22 @@ class NN:
             print(self.wo[j])
 
     def writeOutput(self,output_data):
-        with open(output_data,'w') as f:
-            for line in self.wi:
-                np.savetxt(f, line, fmt='%.sf')
+        output_file = open(output_data,'w')
+        L = [str(len(self.wi)-1)+" ",str(len(self.wi[0]))+" ",str(len(self.wo[0]))+"\n\n" ]
+        output_file.writelines(L)
+        output_file.close()
+
+        output_file = open(output_data,'ab')
+        np.savetxt(output_file,self.wi,fmt='%.2f')
+        output_file.close()
+
+        output_file = open(output_data,'a+')
+        output_file.write("\n")
+        output_file.close()
+
+        output_file = open(output_data,'ab')
+        np.savetxt(output_file,self.wo,fmt='%.2f')
+        output_file.close()
 
     def train(self, input_data, output_data, max_iterations=1000, eta=0.5, min_error=1.0):
         for i in range(max_iterations):
@@ -152,7 +165,7 @@ class NN:
                 break
         print ("Reached max iterations")
         # Create output file with the weights
-        # ~ self.writeOutput(output_data)
+        self.writeOutput(output_data)
 
 
 def demo():
