@@ -28,6 +28,13 @@ def sigmoid(x):
 def dsigmoid(y):
     return y*(1-y)
 
+# Find the length of a given text file
+def file_len(fname):
+    with open(fname) as f:
+        for i, l in enumerate(f):
+            pass
+    return i + 1
+
 class NN:
     def __init__(self, ni, nh, no):
         # number of input, hidden, and output nodes
@@ -117,8 +124,10 @@ class NN:
         return error
 
 
-    def test(self, patterns):
-        for p in patterns:
+    def test(self, input_data):
+        test_case = self.readInput(input_data)
+        np.take(test_case,np.random.permutation(test_case.shape[0]),axis=0,out=test_case)
+        for p in test_case:
             print(p[0], '->', self.update(p[0]))
 
     def weights(self):
@@ -130,6 +139,76 @@ class NN:
         for j in range(self.nh):
             print(self.wo[j])
 
+    def readInput(self,input_data):
+        reference=[]
+        reference2=[]
+        content = []
+        digits = []
+        digits2 = []
+        tags = []
+        content2 = []
+
+        input_file = open("data.txt",'r')
+
+        lines=[10,21,32,43,54,65,76,87,98,109]
+
+        for i in range(1,file_len("data.txt")+1):
+            line = input_file.readline()
+            if i not in lines:
+                content.append(line)
+            elif i in lines:
+                reference.append(line)
+
+        #Parse the file
+        content = [x.strip() for x in content]
+        reference = [x.strip() for x in reference]
+        for a in content:
+            if a != '':
+                content2.append(a)
+
+        for a in reference:
+            if a != '':
+                reference2.append(a)
+
+        digits.append(content2[0:8])
+        digits.append(content2[8:16])
+        digits.append(content2[16:24])
+        digits.append(content2[24:32])
+        digits.append(content2[32:40])
+        digits.append(content2[40:48])
+        digits.append(content2[48:56])
+        digits.append(content2[56:64])
+        digits.append(content2[64:72])
+        digits.append(content2[72:80])
+
+        for j in range(1,10):
+            digits[j]="".join(digits[j])
+            data2 = []
+            for element in digits[j]:
+                if element != ',':
+                    element=int(element)
+                    data2.append(element)
+            digits2.append(data2)
+
+        digits2.append(data2)
+
+        for m in range(0,10):
+            sequence = []
+            for element in reference2[m]:
+                if element != ',':
+                    element=int(element)
+                    sequence.append(element)
+            tags.append(sequence)
+
+        for k in range(0,10):
+            a = [digits2[k],tags[k]]
+            data_base.append(a)
+
+        #Convert to NumPy array
+        data_base = np.array(data_base)
+
+        return data_base
+
     def writeOutput(self,output_data):
         output_file = open(output_data,'w')
         L = [str(len(self.wi)-1)+" ",str(len(self.wi[0]))+" ",str(len(self.wo[0]))+"\n\n" ]
@@ -137,7 +216,7 @@ class NN:
         output_file.close()
 
         output_file = open(output_data,'ab')
-        np.savetxt(output_file,self.wi,fmt='%.2f')
+        np.savetxt(output_file,self.wi,fmt='%.10f')
         output_file.close()
 
         output_file = open(output_data,'a+')
@@ -149,11 +228,12 @@ class NN:
         output_file.close()
 
     def train(self, input_data, output_data, max_iterations=1000, eta=0.5, min_error=1.0):
+        training_data = self.readInput(input_data)
         for i in range(max_iterations):
             error = 0.0
             # Randomly shuffle the training data
-            np.take(input_data,np.random.permutation(input_data.shape[0]),axis=0,out=input_data)
-            for p in input_data:
+            np.take(training_data,np.random.permutation(training_data.shape[0]),axis=0,out=training_data)
+            for p in training_data:
                 inputs = p[0]
                 targets = p[1]
                 self.update(inputs)
@@ -167,65 +247,16 @@ class NN:
         # Create output file with the weights
         self.writeOutput(output_data)
 
-
 def demo():
-
-    data_base = [
-        [[0,0,0,1,1,0,0,0,0,0,1,1,1,0,0,0,
-        0,0,0,1,1,0,0,0,0,0,0,1,1,0,0,0,
-        0,0,0,1,1,0,0,0,0,0,0,1,1,0,0,0,
-        0,0,0,1,1,0,0,0,0,0,1,1,1,1,0,0], [1,0,0,0,0,0,0,0,0,0]],
-        [[0,0,1,1,1,1,0,0,0,1,1,1,1,1,1,0,
-        0,1,1,0,0,0,1,1,0,0,0,0,0,1,1,0,
-        0,0,0,0,1,1,0,0,0,0,0,1,1,0,0,0,
-        0,0,0,1,1,1,1,1,0,1,1,1,1,1,1,1], [0,1,0,0,0,0,0,0,0,0]],
-        [[0,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,
-        0,0,0,0,0,1,1,0,0,0,0,1,1,0,0,0,
-        0,0,0,1,1,1,1,0,0,0,0,0,0,0,1,1,
-        0,0,0,0,0,1,1,1,0,0,1,1,1,1,1,0], [0,0,1,0,0,0,0,0,0,0]],
-        [[0,1,1,0,1,1,0,0,0,1,1,0,1,1,0,0,
-        0,1,1,0,1,1,0,0,0,1,1,1,1,1,0,0,
-        0,0,0,0,1,1,0,0,0,0,0,0,1,1,0,0,
-        0,0,0,0,1,1,0,0,0,0,0,0,1,1,0,0], [0,0,0,1,0,0,0,0,0,0]],
-        [[0,1,1,1,1,1,1,1,0,1,1,0,0,0,0,0,
-        0,1,1,0,0,0,0,0,0,1,1,1,1,1,0,0,
-        0,0,0,0,0,1,1,0,0,0,0,0,0,0,1,1,
-        0,1,1,1,1,1,1,1,0,1,1,1,1,1,1,0], [0,0,0,0,1,0,0,0,0,0]],
-        [[0,0,0,0,1,1,0,0,0,0,0,1,1,0,0,0,
-        0,0,1,1,0,0,0,0,0,1,1,0,0,0,0,0,
-        0,1,1,1,1,1,1,0,0,1,1,0,0,0,1,1,
-        0,1,1,0,0,0,1,1,0,0,1,1,1,1,1,0], [0,0,0,0,0,1,0,0,0,0]],
-        [[0,1,1,1,1,1,1,1,0,0,0,0,0,0,1,1,
-        0,0,0,0,0,1,1,0,0,0,0,0,0,1,1,0,
-        0,0,0,0,1,1,0,0,0,0,0,0,1,1,0,0,
-        0,0,0,1,1,0,0,0,0,0,0,1,1,0,0,0], [0,0,0,0,0,0,1,0,0,0]],
-        [[0,0,1,1,1,1,1,0,0,1,1,0,0,0,1,1,
-        0,1,1,0,0,0,1,1,0,0,1,1,1,1,1,0,
-        0,1,1,0,0,0,1,1,0,1,1,0,0,0,1,1,
-        0,1,1,0,0,0,1,1,0,0,1,1,1,1,1,0], [0,0,0,0,0,0,0,1,0,0]],
-        [[0,0,1,1,1,1,1,0,0,1,1,0,0,0,1,1,
-        0,1,1,0,0,0,1,1,0,0,1,1,1,1,1,1,
-        0,0,0,0,0,1,1,0,0,0,0,0,1,1,0,0,
-        0,0,0,0,1,1,0,0,0,0,0,1,1,0,0,0], [0,0,0,0,0,0,0,0,1,0]],
-        [[0,0,1,1,1,1,1,0,0,1,1,0,0,0,1,1,
-        0,1,1,0,0,0,1,1,0,1,1,0,0,0,1,1,
-        0,1,1,0,0,0,1,1,0,1,1,0,0,0,1,1,
-        0,1,1,0,0,0,1,1,0,0,1,1,1,1,1,0], [0,0,0,0,0,0,0,0,0,1]]
-    ]
-
-    #Convert to NumPy array
-    data_base = np.array(data_base)
-
-    test_case = np.copy(data_base)
-    np.take(test_case,np.random.permutation(test_case.shape[0]),axis=0,out=test_case)
-
     # Create a basic NN (3 layers)
     # NN(self, #nodos de entrada, #nodos de la capa oculta, #nodos de salida)
-    n = NN(len(data_base[0][0]), len(data_base[0][0]), len(data_base[0][1]))
+    n = NN(64, 64, 10)
+    input_data="data.txt"
+    output_data="output.txt"
     # Train it with some patterns
-    n.train(data_base, "output.txt", 1000, 0.5, 0.001)
+    n.train(input_data,output_data,1000,0.5,0.5)
     # Test it
-    n.test(test_case)
+    n.test(input_data)
 
 if __name__ == '__main__':
     demo()
