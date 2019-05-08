@@ -69,7 +69,7 @@ class NN:
         # create weights
         self.wi = makeMatrix(self.ni, self.nh)
         self.wo = makeMatrix(self.nh, self.no)
-        # set them to random vaules
+        # set them to random values
         for i in range(self.ni):
             for j in range(self.nh):
                 self.wi[i][j] = rand(-0.2, 0.2)
@@ -333,12 +333,12 @@ class NN:
                 targets = p[1]
                 self.update(inputs)
                 error = error + self.backPropagate(targets, eta)
-            # ~ if i % 100 == 0: #Print error only iterations/100 times
-            print("Training the neural network, %d/%d iterations..." % (i,max_iterations), end="\r")
+            print("Training the neural network, %d/%d iterations..." % (i+1,max_iterations), end="\r")
             if error < min_error:
-                print ("Reached minimum error criteria")
+                print ("\n\nDone -> reached minimum error criteria\n")
                 break
-        print ("Reached max iterations")
+            elif (i == max_iterations-1):
+                print ("\n\nDone -> reached max iterations\n")
         # Create output file with the weights
         self.writeOutput(output_data)
         end = time.time()
@@ -355,9 +355,8 @@ def demo():
     input_data="data.txt"
     output_data="output.txt"
     # Train it with some patterns
-    n.train(input_data,output_data,1000,0.5,0.001)
+    n.train(input_data,output_data,1000,0.5,0.0001)
     # Test it
-    n.readWeights(output_data)
     n.test(input_data,output_data)
 
 if __name__ == '__main__':
