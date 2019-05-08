@@ -5,6 +5,9 @@
 #
 import math
 import random
+import operator
+import time
+import sys
 import numpy as np
 
 random.seed(0)
@@ -33,7 +36,23 @@ def file_len(fname):
     with open(fname) as f:
         for i, l in enumerate(f):
             pass
+    f.close()
     return i + 1
+
+def map_index(argument):
+    switcher = {
+        0: "one",
+        1: "two",
+        2: "three",
+        3: "four",
+        4: "five",
+        5: "six",
+        6: "seven",
+        7: "eight",
+        8: "nine",
+        9: "zero",
+    }
+    return switcher.get(argument)
 
 class NN:
     def __init__(self, ni, nh, no):
@@ -60,6 +79,35 @@ class NN:
 
         self.ci = makeMatrix(self.ni, self.nh)
         self.co = makeMatrix(self.nh, self.no)
+
+    def evaluate(self, inputs, weights_file):
+
+        weights = self.readWeights(weights_file)
+        in_weights = weights[0]
+        out_weights = weights[1]
+
+        if len(inputs) != self.ni-1:
+            raise ValueError('wrong number of inputs')
+
+        # input activations
+        for i in range(self.ni-1):
+            self.ai[i] = inputs[i]
+
+        # hidden activations
+        for j in range(self.nh):
+            sum = 0.0
+            for i in range(self.ni):
+                sum = sum + self.ai[i] * in_weights[i][j]
+            self.ah[j] = sigmoid(sum)
+
+        # output activations
+        for k in range(self.no):
+            sum = 0.0
+            for j in range(self.nh):
+                sum = sum + self.ah[j] * out_weights[j][k]
+            self.ao[k] = sigmoid(sum)
+
+        return self.ao[:]
 
     def update(self, inputs):
         if len(inputs) != self.ni-1:
@@ -124,22 +172,68 @@ class NN:
         return error
 
 
-    def test(self, input_data):
+    def test(self, input_data, weights_file):
         test_case = self.readInput(input_data)
         np.take(test_case,np.random.permutation(test_case.shape[0]),axis=0,out=test_case)
         for p in test_case:
-            print(p[0], '->', self.update(p[0]))
+            index, value = max(enumerate(self.evaluate(p[0], weights_file)), key=operator.itemgetter(1))
+            number = map_index(index)
+            print ("The number is: %s with a certainty of: %f" % (number,value))
 
-    def weights(self):
-        print('Input weights:')
-        for i in range(self.ni):
-            print(self.wi[i])
-        print()
-        print('Output weights:')
-        for j in range(self.nh):
-            print(self.wo[j])
+    def readWeights(self,weights_file):
+
+        weights = []
+        header = []
+        header2 = []
+        content = []
+        content2 = []
+        matrices = []
+        matrices2 = []
+
+        input_file = open(weights_file,'r')
+
+        lines=[1]
+
+        for i in range(1,file_len(weights_file)+1):
+            line = input_file.readline()
+            if i not in lines:
+                content.append(line)
+            elif i in lines:
+                header.append(line)
+
+        content = [x.strip() for x in content]
+        header = [x.strip() for x in header]
+        for a in content:
+            if a:
+                content2.append(a)
+
+        for a in header:
+            if a:
+                header2.append(a)
+
+        matrices.append(content2[0:65])
+        matrices.append(content2[65:129])
+
+        for j in range(2):
+            data_converted = []
+            # Every row
+            for text in matrices[j]:
+                data_splited = []
+                data_splited = text.split(',')
+                for data in data_splited:
+                    numbers = []
+                    numbers_converted = []
+                    numbers = data_splited[0].split(' ')
+                    for number in numbers:
+                        number_converted=float(number)
+                        numbers_converted.append(number_converted)
+                data_converted.append(numbers_converted)
+            weights.append(data_converted)
+
+        return weights
 
     def readInput(self,input_data):
+        data_base = []
         reference=[]
         reference2=[]
         content = []
@@ -148,11 +242,11 @@ class NN:
         tags = []
         content2 = []
 
-        input_file = open("data.txt",'r')
+        input_file = open(input_data,'r')
 
         lines=[10,21,32,43,54,65,76,87,98,109]
 
-        for i in range(1,file_len("data.txt")+1):
+        for i in range(1,file_len(input_data)+1):
             line = input_file.readline()
             if i not in lines:
                 content.append(line)
@@ -163,11 +257,11 @@ class NN:
         content = [x.strip() for x in content]
         reference = [x.strip() for x in reference]
         for a in content:
-            if a != '':
+            if a:
                 content2.append(a)
 
         for a in reference:
-            if a != '':
+            if a:
                 reference2.append(a)
 
         digits.append(content2[0:8])
@@ -181,7 +275,7 @@ class NN:
         digits.append(content2[64:72])
         digits.append(content2[72:80])
 
-        for j in range(1,10):
+        for j in range(10):
             digits[j]="".join(digits[j])
             data2 = []
             for element in digits[j]:
@@ -192,7 +286,7 @@ class NN:
 
         digits2.append(data2)
 
-        for m in range(0,10):
+        for m in range(10):
             sequence = []
             for element in reference2[m]:
                 if element != ',':
@@ -200,7 +294,7 @@ class NN:
                     sequence.append(element)
             tags.append(sequence)
 
-        for k in range(0,10):
+        for k in range(10):
             a = [digits2[k],tags[k]]
             data_base.append(a)
 
@@ -224,10 +318,11 @@ class NN:
         output_file.close()
 
         output_file = open(output_data,'ab')
-        np.savetxt(output_file,self.wo,fmt='%.2f')
+        np.savetxt(output_file,self.wo,fmt='%.10f')
         output_file.close()
 
     def train(self, input_data, output_data, max_iterations=1000, eta=0.5, min_error=1.0):
+        start = time.time()
         training_data = self.readInput(input_data)
         for i in range(max_iterations):
             error = 0.0
@@ -238,14 +333,20 @@ class NN:
                 targets = p[1]
                 self.update(inputs)
                 error = error + self.backPropagate(targets, eta)
-            if i % 100 == 0: #Print error only iterations/100 times
-                print('error %-.5f' % error)
+            # ~ if i % 100 == 0: #Print error only iterations/100 times
+            print("Training the neural network, %d/%d iterations..." % (i,max_iterations), end="\r")
             if error < min_error:
                 print ("Reached minimum error criteria")
                 break
         print ("Reached max iterations")
         # Create output file with the weights
         self.writeOutput(output_data)
+        end = time.time()
+        print("*****************************************")
+        print("Time elapsed during training: %f" %(end - start))
+        print("Error: %f" % error)
+        print("*****************************************")
+
 
 def demo():
     # Create a basic NN (3 layers)
@@ -254,9 +355,10 @@ def demo():
     input_data="data.txt"
     output_data="output.txt"
     # Train it with some patterns
-    n.train(input_data,output_data,1000,0.5,0.5)
+    n.train(input_data,output_data,1000,0.5,0.001)
     # Test it
-    n.test(input_data)
+    n.readWeights(output_data)
+    n.test(input_data,output_data)
 
 if __name__ == '__main__':
     demo()
