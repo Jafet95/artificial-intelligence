@@ -1,3 +1,8 @@
+# Curso de maestria: Inteligencia artificial (TEC), I Semestre 2019
+# Author: Jafet Chaves Barrantes <jafet.a15@gmail.com>
+
+# Reinforcement Learning - Policy Iteration
+
 import numpy as np
 import math
 from scipy.stats import poisson
@@ -15,43 +20,41 @@ def compute_poisson (lam, cutoff):
     pmf[-1] += poisson_sf[lam][cutoff]
     return pmf
 
+#Model parameters
+CAPACITY = 20
+RENTAL_REWARD = 10.
+MOVING_COST = 2
+MAX_TRANSFERS = 5
+FORBID_ACT_PUNISH = 1000
+REQ_EXPECT_1 = 3
+REQ_EXPECT_2 = 4
+RET_EXPECT_1 = 3
+RET_EXPECT_2 = 2
+DISCOUNT = 0.9
+
+POLICY_ACCURACY = 0.01
+
 class PolicyIteration():
-
-    capacity = 20
-    rental_reward = 10.
-    moving_cost = 1.
-    max_moving = 5
-
-    bad_action_cost = 1000
-
-    REQ_EXPECT_1 = 3
-    REQ_EXPECT_2 = 4
-    RET_EXPECT_1 = 3
-    RET_EXPECT_2 = 2
-
-    discount = 0.9
-
-    policy_evaluation_error = 0.01
 
     policy = None
     value = None
 
     def __init__(self):
-        self.policy = np.zeros([self.capacity + 1]*2, int)
-        self.funct_value = np.zeros([self.capacity + 1]*2)
+        self.policy = np.zeros([CAPACITY + 1]*2, int)
+        self.funct_value = np.zeros([CAPACITY + 1]*2)
 
-        self._reward1 = self.expected_rental_reward(self.REQ_EXPECT_1)
-        self._reward2 = self.expected_rental_reward(self.REQ_EXPECT_2)
-
-        assert self.bad_action_cost >= 0
+        self._reward1 = self.expected_rental_reward(REQ_EXPECT_1)
+        self._reward2 = self.expected_rental_reward(REQ_EXPECT_2)
 
     def estimate_action_value(self, action, s1, s2):
-        transition_prob1 = self.transition_probability(s1, self.REQ_EXPECT_1, self.RET_EXPECT_1, -action)
-        transition_prob2 = self.transition_probability(s2, self.REQ_EXPECT_2, self.RET_EXPECT_2, action)
+        transition_prob1 = self.transition_probability(s1, REQ_EXPECT_1, RET_EXPECT_1, -action)
+        transition_prob2 = self.transition_probability(s2, REQ_EXPECT_2, RET_EXPECT_2, action)
         transition_prob = np.outer(transition_prob1, transition_prob2)
 
-        estimated_value = self._reward1[s1] + self._reward2[s2] - self.expected_moving_cost(s1, s2, action) + \
-               self.discount * sum((transition_prob * self.funct_value).flat)
+        # Total expected reward
+        total_reward = self._reward1[s1] + self._reward2[s2]
+        estimated_value = total_reward - self.estimate_transfer_cost(s1, s2, action)
+        estimated_value += DISCOUNT * sum((transition_prob * self.funct_value).flat)
 
         return estimated_value
 
@@ -74,7 +77,7 @@ class PolicyIteration():
                 policy_iterator.iternext()
 
             print("Policy Evaluated, delta:", delta)
-            if delta < self.policy_evaluation_error:
+            if delta < POLICY_ACCURACY:
                 break
 
     # policy improvement
@@ -85,7 +88,7 @@ class PolicyIteration():
 
         policy_iterator = np.nditer([self.policy], flags=['multi_index'])
 
-        action_array = np.arange(-self.max_moving, self.max_moving + 1)
+        action_array = np.arange(-MAX_TRANSFERS, MAX_TRANSFERS + 1)
 
         while not policy_iterator.finished:
             val = []
@@ -105,59 +108,55 @@ class PolicyIteration():
 
         return is_policy_changed
 
-    def expected_moving_cost(self, s1, s2, action):
+    def estimate_transfer_cost(self, s1, s2, action):
+
+        to_rental1 = None
+
         if action == 0:
             return 0.
 
-        # moving from state s1 into state s2
+        # Transfer cars to to rental 2
         if action > 0:
-            probability = self.transition_probability(s1, self.REQ_EXPECT_1, self.RET_EXPECT_1)
-            cost = self.gen_move_cost_array(action)
-            return cost.dot(probability)
+            probability = self.transition_probability(s1, REQ_EXPECT_1, RET_EXPECT_1)
 
-        # moving from state s2 into state s1
-        probability = self.transition_probability(s2, self.REQ_EXPECT_2, self.RET_EXPECT_2)
-        to_rental1 = True
-        cost = self.gen_move_cost_array(action, to_rental1)
-        return cost.dot(probability)
-
-    def gen_move_cost_array(self, action, return_flag=False):
+        # Transfer cars to to rental 1
+        if action < 0:
+            probability = self.transition_probability(s2, REQ_EXPECT_2, RET_EXPECT_2)
+            to_rental1 = True
 
         abs_action = abs(action)
 
-        # bad action is punished
+        # forbidden action (moving more cars than permitted) is punished
         # +1 because one employee is happy to return one car for free to rental 1
-        if return_flag == True:
+        if to_rental1 == True:
             cost = np.asarray(
-                [self.bad_action_cost if ii < abs_action+1
-                 else abs_action for ii in range(self.capacity + 1)]
-            ) + self.moving_cost
+                [FORBID_ACT_PUNISH if ii < abs_action+1
+                 else abs_action for ii in range(CAPACITY + 1)]
+            ) + MOVING_COST
         else:
             cost = np.asarray(
-                [self.bad_action_cost if ii < abs_action else abs_action for ii in range(self.capacity + 1)]
-            ) + self.moving_cost
+                [FORBID_ACT_PUNISH if ii < abs_action else abs_action for ii in range(CAPACITY + 1)]
+            ) + MOVING_COST
 
-        return cost
+        return cost.dot(probability)
 
     def expected_rental_reward(self, expected_request):
-        return np.asarray([self.state_reward(s, expected_request) for s in range(self.capacity + 1)])
+        return np.asarray([self.state_reward(s, expected_request) for s in range(CAPACITY + 1)])
 
     def state_reward(self, s, lam):
-        rewards = self.rental_reward * np.arange(s + 1)
+        rewards = RENTAL_REWARD * np.arange(s + 1)
         probability = compute_poisson(lam, s)
         return rewards.dot(probability)
 
     def transition_probability(self, s, req, ret, action=0):
 
-        car_returns_size = self.max_moving + self.capacity
+        car_returns_size = MAX_TRANSFERS + CAPACITY
 
         p_req = compute_poisson(req, s)
         p_ret = compute_poisson(ret, car_returns_size)
         probability = np.outer(p_req, p_ret)
 
         transition_prob = np.asarray([probability.trace(offset) for offset in range(-s, car_returns_size + 1)])
-
-        assert abs(action) <= self.max_moving, "action can be large than %s." % self.max_moving
 
         # No cars are being moved
         if action == 0:
@@ -166,20 +165,20 @@ class PolicyIteration():
 
         # Move cars from rental 1 to rental 2
         if action > 0:
-            transition_prob[self.capacity-action] += sum(transition_prob[self.capacity-action+1:])
-            transition_prob[self.capacity-action+1:] = 0
+            transition_prob[CAPACITY-action] += sum(transition_prob[CAPACITY-action+1:])
+            transition_prob[CAPACITY-action+1:] = 0
 
-            return np.roll(transition_prob, shift=action)[:self.capacity+1]
+            return np.roll(transition_prob, shift=action)[:CAPACITY+1]
 
         # Move cars from rental 2 to rental 1
         action = -action
         transition_prob[action] += sum(transition_prob[:action])
         transition_prob[:action] = 0
 
-        transition_prob[action+self.capacity] += sum(transition_prob[action+self.capacity+1:])
-        transition_prob[action+self.capacity+1:] = 0
+        transition_prob[action+CAPACITY] += sum(transition_prob[action+CAPACITY+1:])
+        transition_prob[action+CAPACITY+1:] = 0
 
-        return np.roll(transition_prob, shift=-action)[:self.capacity+1]
+        return np.roll(transition_prob, shift=-action)[:CAPACITY+1]
 
     def policy_iteration(self):
 
